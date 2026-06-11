@@ -1,0 +1,352 @@
+
+<h2 class="sr-only">Neurological AI analysis portal — doctor-facing dashboard showing patient diagnosis, brain component measurements, and feature analysis</h2>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans)}
+.portal{padding:1.25rem 1rem;display:flex;flex-direction:column;gap:1.25rem}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding-bottom:1rem;border-bottom:0.5px solid var(--color-border-tertiary)}
+.topbar-left{display:flex;flex-direction:column;gap:2px}
+.topbar-title{font-size:17px;font-weight:500;color:var(--color-text-primary)}
+.topbar-sub{font-size:12px;color:var(--color-text-secondary)}
+.topbar-right{display:flex;gap:8px;align-items:center}
+.badge{font-size:11px;padding:3px 10px;border-radius:var(--border-radius-md);font-weight:500}
+.badge-warn{background:var(--color-background-warning);color:var(--color-text-warning)}
+.badge-danger{background:var(--color-background-danger);color:var(--color-text-danger)}
+.badge-ok{background:var(--color-background-success);color:var(--color-text-success)}
+.row2{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.row3{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.1rem}
+.card-title{font-size:12px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem}
+.verdict-card{border:0.5px solid var(--color-border-danger);background:var(--color-background-primary)}
+.verdict-main{font-size:22px;font-weight:500;color:var(--color-text-danger)}
+.verdict-sub{font-size:12px;color:var(--color-text-secondary);margin-top:4px}
+.confidence-row{display:flex;align-items:center;gap:10px;margin-top:12px}
+.conf-bar-bg{flex:1;height:7px;background:var(--color-background-secondary);border-radius:99px;overflow:hidden}
+.conf-bar-fill{height:100%;border-radius:99px;background:#E24B4A}
+.conf-label{font-size:13px;font-weight:500;color:var(--color-text-primary);min-width:38px;text-align:right}
+.metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.metric-item{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:8px 10px}
+.metric-val{font-size:18px;font-weight:500;color:var(--color-text-primary)}
+.metric-lbl{font-size:11px;color:var(--color-text-secondary);margin-top:1px}
+.struct-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.struct-row:last-child{border-bottom:none}
+.struct-name{font-size:12px;color:var(--color-text-primary);width:148px;flex-shrink:0}
+.struct-bar-bg{flex:1;height:8px;background:var(--color-background-secondary);border-radius:99px;overflow:hidden}
+.struct-bar-fill{height:100%;border-radius:99px;transition:width 0.3s}
+.struct-val{font-size:11px;font-weight:500;min-width:34px;text-align:right}
+.struct-flag{font-size:10px;padding:1px 6px;border-radius:99px;font-weight:500;min-width:38px;text-align:center}
+.flag-hi{background:var(--color-background-danger);color:var(--color-text-danger)}
+.flag-lo{background:var(--color-background-warning);color:var(--color-text-warning)}
+.flag-ok{background:var(--color-background-success);color:var(--color-text-success)}
+.feat-grid{display:flex;flex-direction:column;gap:6px}
+.feat-item{display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:5px 8px;background:var(--color-background-secondary);border-radius:var(--border-radius-md)}
+.feat-name{color:var(--color-text-secondary)}
+.feat-val{font-weight:500;color:var(--color-text-primary)}
+.tabs{display:flex;gap:4px;margin-bottom:10px}
+.tab{font-size:11px;padding:3px 10px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);color:var(--color-text-secondary);cursor:pointer;background:transparent}
+.tab.active{background:var(--color-background-info);color:var(--color-text-info);border-color:transparent}
+canvas{width:100%!important}
+.section-label{font-size:11px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.06em;margin-top:0.25rem;margin-bottom:0.5rem}
+.history-row{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px;border-bottom:0.5px solid var(--color-border-tertiary)}
+.history-row:last-child{border-bottom:none}
+.history-date{color:var(--color-text-secondary);width:80px;flex-shrink:0}
+.history-val{font-weight:500;color:var(--color-text-primary);width:60px}
+.history-class{padding:1px 7px;border-radius:99px;font-size:10px;font-weight:500}
+.rec-item{display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:0.5px solid var(--color-border-tertiary);font-size:12px}
+.rec-item:last-child{border-bottom:none}
+.rec-dot{width:6px;height:6px;border-radius:50%;margin-top:4px;flex-shrink:0}
+</style>
+
+<div class="portal">
+
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="topbar-title"><i class="ti ti-brain" aria-hidden="true" style="margin-right:6px;font-size:16px"></i>NeuroAI — Clinical Report Portal</span>
+      <span class="topbar-sub">Patient ID: NP-2024-0847 &nbsp;·&nbsp; Scan date: 11 Jun 2026 &nbsp;·&nbsp; Modality: T1-weighted MRI</span>
+    </div>
+    <div class="topbar-right">
+      <span class="badge badge-danger">High risk</span>
+      <span style="font-size:12px;color:var(--color-text-secondary)">Dr. A. Rahman</span>
+      <i class="ti ti-download" aria-hidden="true" style="font-size:18px;color:var(--color-text-secondary);cursor:pointer"></i>
+    </div>
+  </div>
+
+  <div class="row2">
+    <div class="card verdict-card">
+      <div class="card-title">AI classification</div>
+      <div class="verdict-main">Alzheimer's disease</div>
+      <div class="verdict-sub">Stage: Moderate (CDR 1.0) &nbsp;·&nbsp; Early-onset pattern</div>
+      <div class="confidence-row">
+        <span style="font-size:11px;color:var(--color-text-secondary)">Confidence</span>
+        <div class="conf-bar-bg"><div class="conf-bar-fill" style="width:87%"></div></div>
+        <span class="conf-label">87%</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Key measurements</div>
+      <div class="metric-grid">
+        <div class="metric-item">
+          <div class="metric-val" style="color:var(--color-text-danger)">−38%</div>
+          <div class="metric-lbl">Hippocampal volume vs norm</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-val" style="color:var(--color-text-danger)">+41%</div>
+          <div class="metric-lbl">Lateral ventricle enlargement</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-val" style="color:var(--color-text-warning)">−22%</div>
+          <div class="metric-lbl">Temporal gyri thickness</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-val" style="color:var(--color-text-warning)">−19%</div>
+          <div class="metric-lbl">Precuneus cortex vs norm</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Differential diagnosis</div>
+      <div style="display:flex;flex-direction:column;gap:7px;margin-top:2px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="flex:1;font-size:12px;color:var(--color-text-primary)">Alzheimer's disease</div>
+          <div style="width:90px;height:7px;background:var(--color-background-secondary);border-radius:99px;overflow:hidden"><div style="width:87%;height:100%;background:#E24B4A;border-radius:99px"></div></div>
+          <div style="font-size:12px;font-weight:500;min-width:32px;text-align:right;color:var(--color-text-danger)">87%</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="flex:1;font-size:12px;color:var(--color-text-primary)">Vascular dementia</div>
+          <div style="width:90px;height:7px;background:var(--color-background-secondary);border-radius:99px;overflow:hidden"><div style="width:8%;height:100%;background:#EF9F27;border-radius:99px"></div></div>
+          <div style="font-size:12px;font-weight:500;min-width:32px;text-align:right;color:var(--color-text-warning)">8%</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="flex:1;font-size:12px;color:var(--color-text-primary)">Lewy body dementia</div>
+          <div style="width:90px;height:7px;background:var(--color-background-secondary);border-radius:99px;overflow:hidden"><div style="width:3%;height:100%;background:#888780;border-radius:99px"></div></div>
+          <div style="font-size:12px;font-weight:500;min-width:32px;text-align:right;color:var(--color-text-secondary)">3%</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="flex:1;font-size:12px;color:var(--color-text-primary)">Normal aging</div>
+          <div style="width:90px;height:7px;background:var(--color-background-secondary);border-radius:99px;overflow:hidden"><div style="width:2%;height:100%;background:#888780;border-radius:99px"></div></div>
+          <div style="font-size:12px;font-weight:500;min-width:32px;text-align:right;color:var(--color-text-secondary)">2%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Brain component analysis — deviation from age-matched healthy norm</div>
+    <div style="margin-top:4px">
+      <div class="struct-row" style="border-bottom:0.5px solid var(--color-border-secondary);padding-bottom:6px;margin-bottom:4px">
+        <span class="struct-name" style="font-size:11px;color:var(--color-text-secondary)">Structure</span>
+        <span style="flex:1;font-size:11px;color:var(--color-text-secondary)">Deviation from norm</span>
+        <span style="font-size:11px;color:var(--color-text-secondary);min-width:60px;text-align:right">Volume (cm³)</span>
+        <span style="font-size:11px;color:var(--color-text-secondary);min-width:50px;text-align:right">Status</span>
+      </div>
+
+      <div class="struct-row">
+        <span class="struct-name">Hippocampus</span>
+        <div class="struct-bar-bg"><div class="struct-bar-fill" style="width:62%;background:#E24B4A"></div></div>
+        <span class="struct-val" style="color:var(--color-text-danger)">2.1</span>
+        <span class="struct-flag flag-hi">−38%</span>
+      </div>
+      <div class="struct-row">
+        <span class="struct-name">Lateral ventricles</span>
+        <div class="struct-bar-bg"><div class="struct-bar-fill" style="width:70%;background:#E24B4A"></div></div>
+        <span class="struct-val" style="color:var(--color-text-danger)">18.4</span>
+        <span class="struct-flag flag-hi">+41%</span>
+      </div>
+      <div class="struct-row">
+        <span class="struct-name">Whole gray matter</span>
+        <div class="struct-bar-bg"><div class="struct-bar-fill" style="width:45%;background:#EF9F27"></div></div>
+        <span class="struct-val" style="color:var(--color-text-warning)">412</span>
+        <span class="struct-flag flag-lo">−26%</span>
+      </div>
+      <div class="struct-row">
+        <span class="struct-name">Temporal gyri</span>
+        <div class="struct-bar-bg"><div class="struct-bar-fill" style="width:40%;background:#EF9F27"></div></div>
+        <span class="struct-val" style="color:var(--color-text-warning)">31.2</span>
+        <span class="struct-flag flag-lo">−22%</span>
+      </div>
+      <div class="struct-row">
+        <span class="struct-name">Precuneus</span>
+        <div class="struct-bar-bg"><div class="struct-bar-fill" style="width:38%;background:#EF9F27"></div></div>
+        <span class="struct-val" style="color:var(--color-text-warning)">8.9</span>
+        <span class="struct-flag flag-lo">−19%</span>
+      </div>
+      <div class="struct-row">
+        <span class="struct-name">Post. cingulate</span>
+        <div class="struct-bar-bg"><div class="struct-bar-fill" style="width:32%;background:#EF9F27"></div></div>
+        <span class="struct-val" style="color:var(--color-text-warning)">4.8</span>
+        <span class="struct-flag flag-lo">−17%</span>
+      </div>
+      <div class="struct-row">
+        <span class="struct-name">Inf. lat. ventricles</span>
+        <div class="struct-bar-bg"><div class="struct-bar-fill" style="width:55%;background:#E24B4A"></div></div>
+        <span class="struct-val" style="color:var(--color-text-danger)">1.4</span>
+        <span class="struct-flag flag-hi">+33%</span>
+      </div>
+      <div class="struct-row">
+        <span class="struct-name">Third ventricle</span>
+        <div class="struct-bar-bg"><div class="struct-bar-fill" style="width:42%;background:#EF9F27"></div></div>
+        <span class="struct-val" style="color:var(--color-text-warning)">0.9</span>
+        <span class="struct-flag flag-hi">+28%</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="row3">
+    <div class="card">
+      <div class="card-title">Feature extraction summary</div>
+      <div class="section-label">Point cloud descriptors</div>
+      <div class="feat-grid">
+        <div class="feat-item"><span class="feat-name">FPFH curvature (hippo)</span><span class="feat-val" style="color:var(--color-text-danger)">0.82</span></div>
+        <div class="feat-item"><span class="feat-name">SHOT density (WM)</span><span class="feat-val" style="color:var(--color-text-warning)">0.54</span></div>
+        <div class="feat-item"><span class="feat-name">LoFTR match score</span><span class="feat-val">0.71</span></div>
+        <div class="feat-item"><span class="feat-name">3D GLCM energy</span><span class="feat-val">0.38</span></div>
+      </div>
+      <div class="section-label" style="margin-top:10px">Texture analysis</div>
+      <div class="feat-grid">
+        <div class="feat-item"><span class="feat-name">KDFE RDE</span><span class="feat-val" style="color:var(--color-text-danger)">1.74</span></div>
+        <div class="feat-item"><span class="feat-name">Higuchi FD</span><span class="feat-val" style="color:var(--color-text-warning)">1.31</span></div>
+        <div class="feat-item"><span class="feat-name">LB eigenvalue λ₁</span><span class="feat-val">0.029</span></div>
+        <div class="feat-item"><span class="feat-name">Betti β₀</span><span class="feat-val" style="color:var(--color-text-danger)">4</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">ViT superpixel attention</div>
+      <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:10px">Layer 12 attention weight per structure — higher = more discriminative</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+          <span style="width:120px;color:var(--color-text-primary)">Hippocampus</span>
+          <div style="flex:1;height:14px;background:var(--color-background-secondary);border-radius:99px;overflow:hidden">
+            <div style="width:91%;height:100%;background:#E24B4A;border-radius:99px;display:flex;align-items:center;justify-content:flex-end;padding-right:5px"><span style="font-size:10px;color:white;font-weight:500">0.91</span></div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+          <span style="width:120px;color:var(--color-text-primary)">Temporal gyri</span>
+          <div style="flex:1;height:14px;background:var(--color-background-secondary);border-radius:99px;overflow:hidden">
+            <div style="width:78%;height:100%;background:#E24B4A;border-radius:99px;display:flex;align-items:center;justify-content:flex-end;padding-right:5px"><span style="font-size:10px;color:white;font-weight:500">0.78</span></div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+          <span style="width:120px;color:var(--color-text-primary)">Post. cingulate</span>
+          <div style="flex:1;height:14px;background:var(--color-background-secondary);border-radius:99px;overflow:hidden">
+            <div style="width:65%;height:100%;background:#EF9F27;border-radius:99px;display:flex;align-items:center;justify-content:flex-end;padding-right:5px"><span style="font-size:10px;color:white;font-weight:500">0.65</span></div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+          <span style="width:120px;color:var(--color-text-primary)">Precuneus</span>
+          <div style="flex:1;height:14px;background:var(--color-background-secondary);border-radius:99px;overflow:hidden">
+            <div style="width:58%;height:100%;background:#EF9F27;border-radius:99px;display:flex;align-items:center;justify-content:flex-end;padding-right:5px"><span style="font-size:10px;color:white;font-weight:500">0.58</span></div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+          <span style="width:120px;color:var(--color-text-primary)">Lat. ventricles</span>
+          <div style="flex:1;height:14px;background:var(--color-background-secondary);border-radius:99px;overflow:hidden">
+            <div style="width:44%;height:100%;background:#888780;border-radius:99px;display:flex;align-items:center;justify-content:flex-end;padding-right:5px"><span style="font-size:10px;color:white;font-weight:500">0.44</span></div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+          <span style="width:120px;color:var(--color-text-primary)">Whole gray matter</span>
+          <div style="flex:1;height:14px;background:var(--color-background-secondary);border-radius:99px;overflow:hidden">
+            <div style="width:37%;height:100%;background:#888780;border-radius:99px;display:flex;align-items:center;justify-content:flex-end;padding-right:5px"><span style="font-size:10px;color:white;font-weight:500">0.37</span></div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+          <span style="width:120px;color:var(--color-text-primary)">Inf. lat. ventricles</span>
+          <div style="flex:1;height:14px;background:var(--color-background-secondary);border-radius:99px;overflow:hidden">
+            <div style="width:29%;height:100%;background:#888780;border-radius:99px;display:flex;align-items:center;justify-content:flex-end;padding-right:5px"><span style="font-size:10px;color:white;font-weight:500">0.29</span></div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+          <span style="width:120px;color:var(--color-text-primary)">Third ventricle</span>
+          <div style="flex:1;height:14px;background:var(--color-background-secondary);border-radius:99px;overflow:hidden">
+            <div style="width:21%;height:100%;background:#888780;border-radius:99px;display:flex;align-items:center;justify-content:flex-end;padding-right:5px"><span style="font-size:10px;color:white;font-weight:500">0.21</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row3">
+    <div class="card">
+      <div class="card-title">Longitudinal tracking</div>
+      <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:8px">Hippocampal volume over time (cm³)</div>
+      <canvas id="longi-chart" height="130"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-title">Clinical recommendations</div>
+      <div style="display:flex;flex-direction:column">
+        <div class="rec-item">
+          <div class="rec-dot" style="background:#E24B4A"></div>
+          <span style="color:var(--color-text-primary)">Refer to cognitive neurology for formal CDR assessment and cholinesterase inhibitor evaluation</span>
+        </div>
+        <div class="rec-item">
+          <div class="rec-dot" style="background:#E24B4A"></div>
+          <span style="color:var(--color-text-primary)">PET amyloid scan recommended to confirm amyloid burden before initiating anti-amyloid therapy</span>
+        </div>
+        <div class="rec-item">
+          <div class="rec-dot" style="background:#EF9F27"></div>
+          <span style="color:var(--color-text-primary)">CSF biomarker panel (Aβ42/Aβ40, p-tau181) to stratify treatment eligibility</span>
+        </div>
+        <div class="rec-item">
+          <div class="rec-dot" style="background:#EF9F27"></div>
+          <span style="color:var(--color-text-primary)">Follow-up MRI in 6 months to monitor atrophy progression rate</span>
+        </div>
+        <div class="rec-item">
+          <div class="rec-dot" style="background:#639922"></div>
+          <span style="color:var(--color-text-primary)">Neuropsychological battery (MMSE, MoCA, ADAS-Cog) for baseline cognitive profiling</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+const isDark = getComputedStyle(document.documentElement)
+  .getPropertyValue('--color-text-secondary').trim().startsWith('rgb(255') ||
+  window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+const gridColor = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)';
+const textColor = isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.45)';
+
+new Chart(document.getElementById('longi-chart'), {
+  type: 'line',
+  data: {
+    labels: ['Jan 2024','Jun 2024','Dec 2024','Jun 2025','Dec 2025','Jun 2026'],
+    datasets: [{
+      label: 'Patient',
+      data: [2.9, 2.7, 2.5, 2.3, 2.2, 2.1],
+      borderColor: '#E24B4A',
+      backgroundColor: 'rgba(226,75,74,0.08)',
+      fill: true,
+      tension: 0.35,
+      pointRadius: 4,
+      pointBackgroundColor: '#E24B4A',
+    },{
+      label: 'Norm range',
+      data: [3.4, 3.38, 3.36, 3.34, 3.32, 3.3],
+      borderColor: '#639922',
+      borderDash: [5,4],
+      fill: false,
+      tension: 0.2,
+      pointRadius: 0,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { labels: { color: textColor, font: { size: 11 }, boxWidth: 14 } }
+    },
+    scales: {
+      x: { ticks: { color: textColor, font: { size: 10 } }, grid: { color: gridColor } },
+      y: { ticks: { color: textColor, font: { size: 10 } }, grid: { color: gridColor },
+           min: 1.5, max: 4.0,
+           title: { display: true, text: 'Volume (cm³)', color: textColor, font: { size: 10 } } }
+    }
+  }
+});
+</script>
